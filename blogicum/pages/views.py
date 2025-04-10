@@ -12,12 +12,12 @@ class RulesView(TemplateView):
     template_name = 'pages/rules.html'
 
 
-def csrf_failure(request, reason=''):
+def csrf_failure(request, reason='', exception=None):
     """Функция для страницы ошибки проверки CSRF 403."""
     return render(request, 'pages/403csrf.html', status=403)
 
 
-def page_not_found(request, exeption):
+def page_not_found(request, exception=None):
     """Функция для страницы ошибки 404."""
     return render(request, 'pages/404.html', status=404)
 

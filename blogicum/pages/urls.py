@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import AboutView, RulesView
 
+from .views import AboutView, RulesView
 
 app_name = 'pages'  # namespase для приложения pages.
 

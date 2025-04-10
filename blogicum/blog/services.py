@@ -9,9 +9,7 @@ def truncate_text(text, length=TRUNCATE_LENGTH):
 
 
 def filter_published_posts(queryset):
-    """
-    Фильтр для всех пользователей (только опубликованные посты).
-    """
+    """Фильтр для всех пользователей (только опубликованные посты)."""
     return queryset.filter(
         is_published=True,
         pub_date__lte=now(),
