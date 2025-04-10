@@ -9,12 +9,12 @@ class PostForm(forms.ModelForm):
     class Meta:
         model = Post
         fields = [
-            'title',     # Заголовок поста
-            'text',      # Основной текст
-            'pub_date',  # Дата публикации
-            'category',  # Категория
-            'location',  # Местоположение
-            'image'      # Изображение
+            'title',     # Заголовок поста.
+            'text',      # Основной текст.
+            'pub_date',  # Дата публикации.
+            'category',  # Категория.
+            'location',  # Местоположение.
+            'image'      # Изображение.
         ]
         widgets = {
             'pub_date': forms.DateTimeInput(
@@ -26,8 +26,8 @@ class PostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         """
         Инициализация формы с преобразованием даты для корректного вида.
-        При редактировании существующего поста преобразует datetime в формат,
-        совместимый с datetime-local input.
+        При редактировании существующей публикации преобразует datetime в
+        формат, совместимый с datetime-local input.
         """
         super().__init__(*args, **kwargs)
         # Если instance передан (редактирование существующего поста).

@@ -128,7 +128,7 @@ class PostEditView(LoginRequiredMixin, UpdateView):
         # Проверяем на авторизацию:
         if not request.user.is_authenticated:
             return redirect('blog:post_detail', post_id=post.pk)
-        
+
         # Проверяем на автора:
         if post.author != request.user:
             return redirect('blog:post_detail', post_id=post.pk)
@@ -233,12 +233,12 @@ def delete_post(request, post_id):
     if request.method == 'POST':
         post.delete()
         return redirect('blog:profile', username=request.user.username)
-    
+
     # Форма удаления через GET-запрос.
     form = PostForm(instance=post)
     return render(request, 'blog/create.html', {
         'form': form,
-        'object': post  # Передаем объект для использования в шаблоне
+        'object': post  # Передаем объект для использования в шаблоне.
     })
 
 

@@ -21,10 +21,10 @@ def custom_logout(request):
 
 
 urlpatterns = [
-    # Админка Django
+    # Админка Django.
     path('admin/', admin.site.urls),
 
-    # Основные URL приложения blog
+    # Основные URL приложения blog.
     path('', include('blog.urls')),
 
     # URL для дополнительных страниц приложения pages.
@@ -53,12 +53,12 @@ urlpatterns = [
          auth_views.PasswordResetCompleteView.as_view(),
          name='password_reset_complete'),  # Подтверждение нового пароля.
 
-    # Кастомный logout
+    # Кастомный logout.
     path('auth/logout/', custom_logout, name='logout'),  # Выход из аккаунта.
     path('auth/registration/',
          SignUpView.as_view(),
          name='registration'),  # Регистрация пользователя.
-    
+
     # Стандартные URL-адреса аутентификации Django.
     path('auth/', include('django.contrib.auth.urls')),
 ]

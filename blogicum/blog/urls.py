@@ -42,7 +42,7 @@ urlpatterns = [
     # Страница редактирования профиля пользователя.
     path(
         'profile/edit/',
-        ProfileEditView.as_view(), 
+        ProfileEditView.as_view(),
         name='edit_profile'),
 
     # Страница профиля пользователя.
