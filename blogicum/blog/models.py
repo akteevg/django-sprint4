@@ -11,6 +11,7 @@ User = get_user_model()
 
 class CreatedAtAbstract(models.Model):
     """Абстрактная модель."""
+
     created_at = models.DateTimeField(
         'Добавлено', auto_now_add=True
     )

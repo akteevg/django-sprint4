@@ -12,14 +12,14 @@ class ProfileEditForm(forms.ModelForm):
 
     def clean_username(self):
         """Проверка уникальности username при редактировании профиля."""
-        username = self.cleaned_data['username']  # Новый username из формы
+        username = self.cleaned_data['username']  # Новый username из формы.
         # Ищем пользователей с таким же username,
         # исключая текущего (self.instance).
         if User.objects.exclude(
             pk=self.instance.pk
         ).filter(username=username).exists():
             raise forms.ValidationError('Это имя пользователя уже занято.')
-        return username  # Если проверка пройдена — возвращаем значение
+        return username  # Если проверка пройдена — возвращаем значение.
 
 
 class PostForm(forms.ModelForm):
@@ -35,14 +35,15 @@ class PostForm(forms.ModelForm):
         )
         widgets = {
             'pub_date': forms.DateTimeInput(
-                attrs={'type': 'datetime-local'},  # HTML-элемент даты/время
-                format='%Y-%m-%dT%H:%M'  # Формат для отображения даты
+                attrs={'type': 'datetime-local'},  # HTML-элемент даты/время.
+                format='%Y-%m-%dT%H:%M'  # Формат для отображения даты.
             ),
         }
 
     def __init__(self, *args, **kwargs):
         """
         Инициализация формы с преобразованием даты для корректного вида.
+        
         При редактировании существующей публикации преобразует datetime в
         формат, совместимый с datetime-local input.
         """

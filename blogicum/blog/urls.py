@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from .views import CommentCreateView, PostCreateView, PostEditView, ProfileEditView, ProfileView
+from .views import PostCreateView, PostEditView, ProfileEditView, ProfileView
 
 app_name = 'blog'  # namespase для приложения blog.
 

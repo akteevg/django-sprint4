@@ -24,9 +24,9 @@ class AuthorRedirectMixin(AccessMixin):
     def handle_no_permission(self):
         """Обрабатываем всех пользователей, не прошедших проверку."""
         if not self.request.user.is_authenticated:
-            # Неавторизованные — перенаправляем на страницу входа
+            # Неавторизованные — перенаправляем на страницу входа.
             return redirect_to_login(self.request.get_full_path())
-        # Авторизованные не авторы — перенаправляем на страницу публикации
+        # Авторизованные не авторы — перенаправляем на страницу публикации.
         try:
             obj = self.get_object()
             post_id = obj.post_id if isinstance(obj, Comment) else obj.pk
@@ -63,7 +63,6 @@ class SuccessUrlMixin:
 class PostMixin(AuthorCheckMixin, AuthorRedirectMixin):
     """Миксин для работы с публикациями."""
 
-    # form_class: Optional[Type[forms.ModelForm]] = None  # Аннотация типа.
     template_name = 'blog/create.html'
     pk_url_kwarg = 'post_id'
 
