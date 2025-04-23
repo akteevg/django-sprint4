@@ -1,11 +1,8 @@
-from django import forms
-from django.conf import settings
-from django.contrib.auth.mixins import AccessMixin, LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import AccessMixin, UserPassesTestMixin
 from django.contrib.auth.views import redirect_to_login
-from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404, redirect
+from django.views.generic import DeleteView
+from django.shortcuts import redirect
 from django.urls import reverse
-from typing import Optional, Type
 
 from .models import Comment, Post
 
@@ -19,10 +16,6 @@ class AuthorCheckMixin(UserPassesTestMixin):
             # Для CreateView (создание) разрешено всем авторизованным.
             return self.request.user.is_authenticated
         return obj.author == self.request.user if obj else False
-    
-    def handle_no_permission(self):
-        """Делегируем обработку к AuthorRedirectMixin."""
-        return super().handle_no_permission()
 
 
 class AuthorRedirectMixin(AccessMixin):
@@ -40,6 +33,31 @@ class AuthorRedirectMixin(AccessMixin):
         except (AttributeError, Comment.DoesNotExist, Post.DoesNotExist):
             post_id = self.kwargs.get('post_id', 1)
         return redirect('blog:post_detail', post_id=post_id)
+
+
+class SuccessUrlMixin:
+    """Миксин определет success_url для перенаправления."""
+
+    def get_success_url(self):
+        # Для удаления публикации: перенаправление в профиль.
+        if isinstance(self, DeleteView) and self.model == Post:
+            return reverse(
+                'blog:profile',
+                kwargs={'username': self.request.user.username}
+            )
+
+        # Для комментариев или если post_id передан в URL.
+        if 'post_id' in self.kwargs:
+            return reverse(
+                'blog:post_detail', 
+                kwargs={'post_id': self.kwargs['post_id']}
+            )
+
+        # Для создания/редактирования публикации: используем ID объекта.
+        return reverse(
+            'blog:post_detail',
+            kwargs={'post_id': self.object.pk}
+        )
 
 
 class PostMixin(AuthorCheckMixin, AuthorRedirectMixin):

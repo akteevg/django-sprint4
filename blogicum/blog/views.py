@@ -1,4 +1,3 @@
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
@@ -6,14 +5,11 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.timezone import now
-from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
-
-from pages.views import csrf_failure
 
 from .constants import POSTS_LIMIT_ON_PAGE, COMMENTS_LIMIT_ON_PAGE
 from .forms import CommentForm, PostForm, ProfileEditForm
-from .mixins import AuthorCheckMixin, AuthorRedirectMixin, CommentMixin, PostMixin
+from .mixins import AuthorCheckMixin, CommentMixin, PostMixin, SuccessUrlMixin
 from .models import Category, Comment, Post
 from .services import get_paginated_page
 
@@ -82,8 +78,8 @@ class ProfileEditView(
 
 
 class PostCreateView(
-    # LoginRequiredMixin,
     PostMixin,
+    SuccessUrlMixin,
     CreateView
 ):
     """Создание новой публикации (только для авторизованных)."""
@@ -103,13 +99,11 @@ class PostCreateView(
         """Авторство присваиваем текущему пользователю."""
         form.instance.author = self.request.user
         return super().form_valid(form)
-    
-    def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.object.pk})
 
 
 class PostEditView(
     PostMixin,
+    SuccessUrlMixin,
     UpdateView
 ):
     """Редактирование существующей публикации (только для автора)."""
@@ -117,16 +111,10 @@ class PostEditView(
     model = Post
     form_class = PostForm
 
-    def get_success_url(self):
-        """Перенаправление на страницу публикации после редактирования."""
-        return reverse(
-            'blog:post_detail',
-            kwargs={'post_id': self.object.pk}
-        )
-
 
 class DeletePostView(
     PostMixin,
+    SuccessUrlMixin,
     DeleteView
 ):
     """Удаление публикации (для автора)."""
@@ -152,13 +140,10 @@ class DeletePostView(
         self.object.delete()
         return redirect(success_url)
     
-    def get_success_url(self):
-        return reverse('blog:profile', kwargs={'username': self.request.user.username})
-
 
 class CommentCreateView(
-    # LoginRequiredMixin,
     CommentMixin,
+    SuccessUrlMixin,
     CreateView
 ):
     """Создание комментария (для авторизованных)."""
@@ -172,13 +157,11 @@ class CommentCreateView(
             Post, pk=self.kwargs['post_id'])
         return super().form_valid(form)
 
-    def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.kwargs['post_id']})
-
 
 class CommentEditView(
     AuthorCheckMixin,
     CommentMixin,
+    SuccessUrlMixin,
     UpdateView
 ):
     """Редактирование комментария."""
@@ -186,16 +169,11 @@ class CommentEditView(
     form_class = CommentForm
     template_name = 'blog/comment.html'
 
-    def get_success_url(self):
-        return reverse(
-            'blog:post_detail', 
-            kwargs={'post_id': self.kwargs['post_id']}
-        )
-
 
 class CommentDeleteView(
     AuthorCheckMixin,
     CommentMixin,
+    SuccessUrlMixin,
     DeleteView
 ):
     """Удаление комментария (для автора)."""
@@ -208,9 +186,6 @@ class CommentDeleteView(
             pk=self.kwargs['comment_id'],
             post_id=self.kwargs['post_id']
         )
-    
-    def get_success_url(self):
-        return reverse('blog:post_detail', kwargs={'post_id': self.kwargs['post_id']})
 
 
 def index(request):
