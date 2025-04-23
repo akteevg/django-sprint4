@@ -1,6 +1,6 @@
-from django.utils.timezone import now
+from django.core.paginator import Paginator
 
-from blog.constants import TRUNCATE_LENGTH
+from .constants import TRUNCATE_LENGTH
 
 
 def truncate_text(text, length=TRUNCATE_LENGTH):
@@ -8,10 +8,8 @@ def truncate_text(text, length=TRUNCATE_LENGTH):
     return text[:length] + '...' if len(text) > length else text
 
 
-def filter_published_posts(queryset):
-    """Фильтр для всех пользователей (только опубликованные посты)."""
-    return queryset.filter(
-        is_published=True,
-        pub_date__lte=now(),
-        category__is_published=True
-    )
+def get_paginated_page(queryset, request, per_page):
+    """Создаем пагинатор и возвращаем страницу с объектами."""
+    paginator = Paginator(queryset, per_page)
+    page_number = request.GET.get('page')
+    return paginator.get_page(page_number)

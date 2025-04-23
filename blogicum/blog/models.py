@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Count
+from django.utils.timezone import now
 
 from .constants import CHAR_FIELD_MAX_LENGTH
 from .services import truncate_text
@@ -7,7 +9,18 @@ from .services import truncate_text
 User = get_user_model()
 
 
-class IsPublishedCreatedAtAbstract(models.Model):
+class CreatedAtAbstract(models.Model):
+    """Абстрактная модель."""
+    created_at = models.DateTimeField(
+        'Добавлено', auto_now_add=True
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ('-created_at',)
+
+
+class IsPublishedCreatedAtAbstract(CreatedAtAbstract):
     """Абстрактная модель."""
 
     is_published = models.BooleanField(
@@ -15,12 +28,25 @@ class IsPublishedCreatedAtAbstract(models.Model):
         default=True,
         help_text='Снимите галочку, чтобы скрыть публикацию.'
     )
-    created_at = models.DateTimeField(
-        'Добавлено', auto_now_add=True
-    )
 
-    class Meta:
+    class Meta(CreatedAtAbstract.Meta):
         abstract = True
+
+
+class PostQuerySet(models.QuerySet):
+    """Кастомизация QuerySet. Определяет методы для фильтрации и аннотации."""
+
+    def published(self):
+        """Фильтрация опубликованных публикаций."""
+        return self.filter(
+            is_published=True,
+            pub_date__lte=now(),
+            category__is_published=True
+        )
+
+    def annotate_comments_count(self):
+        """Количество комментариев к каждой публикации."""
+        return self.annotate(comment_count=Count('comments'))
 
 
 class Post(IsPublishedCreatedAtAbstract):
@@ -39,7 +65,8 @@ class Post(IsPublishedCreatedAtAbstract):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор публикации'
+        verbose_name='Автор публикации',
+        related_name='posts'
     )
     location = models.ForeignKey(
         'Location',
@@ -60,15 +87,13 @@ class Post(IsPublishedCreatedAtAbstract):
         blank=True,
         null=True
     )
+    objects = PostQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'публикация'
         verbose_name_plural = 'Публикации'
         default_related_name = 'posts'
         ordering = ('-pub_date',)
-
-    def comment_count(self):
-        return self.comments.count()
 
     def __str__(self):
         return truncate_text(self.title)
@@ -115,11 +140,10 @@ class Location(IsPublishedCreatedAtAbstract):
         return truncate_text(self.name)
 
 
-class Comment(models.Model):
+class Comment(CreatedAtAbstract):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        related_name='comments',
         verbose_name='Публикация'
     )
     author = models.ForeignKey(
@@ -128,12 +152,11 @@ class Comment(models.Model):
         verbose_name='Автор'
     )
     text = models.TextField('Текст комментария')
-    created_at = models.DateTimeField('Добавлено', auto_now_add=True)
-
-    class Meta:
-        ordering = ('created_at',)
+    
+    class Meta(CreatedAtAbstract.Meta):
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
+        default_related_name = 'comments'
 
     def __str__(self):
         return f'Комментарий {self.author.username} к посту {self.post.id}'

@@ -1,6 +1,25 @@
 from django import forms
 
-from .models import Comment, Post
+from .models import Comment, Post, User
+
+
+class ProfileEditForm(forms.ModelForm):
+    """Создаем свою форму с ограниченным набором доступных полей."""
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'username', 'email')
+
+    def clean_username(self):
+        """Проверка уникальности username при редактировании профиля."""
+        username = self.cleaned_data['username']  # Новый username из формы
+        # Ищем пользователей с таким же username,
+        # исключая текущего (self.instance).
+        if User.objects.exclude(
+            pk=self.instance.pk
+        ).filter(username=username).exists():
+            raise forms.ValidationError('Это имя пользователя уже занято.')
+        return username  # Если проверка пройдена — возвращаем значение
 
 
 class PostForm(forms.ModelForm):
@@ -8,14 +27,12 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = [
-            'title',     # Заголовок поста.
-            'text',      # Основной текст.
-            'pub_date',  # Дата публикации.
-            'category',  # Категория.
-            'location',  # Местоположение.
-            'image'      # Изображение.
-        ]
+        exclude = (
+            'id',            # id.
+            'is_published',  # Флаг публикации.
+            'created_at',  # Дата пуб.
+            'author',    # Категория.
+        )
         widgets = {
             'pub_date': forms.DateTimeInput(
                 attrs={'type': 'datetime-local'},  # HTML-элемент даты/время
