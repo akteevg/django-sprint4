@@ -43,7 +43,7 @@ class PostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         """
         Инициализация формы с преобразованием даты для корректного вида.
-        
+
         При редактировании существующей публикации преобразует datetime в
         формат, совместимый с datetime-local input.
         """
