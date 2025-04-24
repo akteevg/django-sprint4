@@ -153,7 +153,7 @@ class Comment(CreatedAtAbstract):
         verbose_name='Автор'
     )
     text = models.TextField('Текст комментария')
-    
+
     class Meta(CreatedAtAbstract.Meta):
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'

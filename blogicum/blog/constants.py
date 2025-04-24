@@ -5,5 +5,5 @@ CHAR_FIELD_MAX_LENGTH = 256
 TRUNCATE_LENGTH = 20
 
 # Количество отображаемых публикаций и комментариев на странице при пагинации.
-POSTS_LIMIT_ON_PAGE = 5
+POSTS_LIMIT_ON_PAGE = 10
 COMMENTS_LIMIT_ON_PAGE = 5

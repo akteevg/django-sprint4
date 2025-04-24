@@ -1,6 +1,7 @@
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -41,7 +42,7 @@ class ProfileView(ListView):
         """Фильтруем посты текущего пользователя и добавляем аннотацию."""
         author = self._get_author()
         queryset = (
-            author.posts
+            Post.objects.filter(author=author)
             .annotate_comments_count()
             .order_by('-pub_date')
         )
@@ -95,6 +96,7 @@ class PostCreateView(
         """
         return None
 
+    @transaction.atomic
     def form_valid(self, form):
         """Авторство присваиваем текущему пользователю."""
         form.instance.author = self.request.user
@@ -139,7 +141,7 @@ class DeletePostView(
         success_url = self.get_success_url()
         self.object.delete()
         return redirect(success_url)
-    
+
 
 class CommentCreateView(
     CommentMixin,
@@ -190,7 +192,11 @@ class CommentDeleteView(
 
 def index(request):
     """Функция для главной страницы."""
-    posts = Post.objects.published().annotate_comments_count()
+    posts = (
+        Post.objects.published()
+        .annotate_comments_count()
+        .order_by('-pub_date')
+    )
     page_obj = get_paginated_page(posts, request, POSTS_LIMIT_ON_PAGE)
     return render(
         request, 'blog/index.html', {'page_obj': page_obj}
@@ -204,7 +210,11 @@ def category_posts(request, category_slug):
         slug=category_slug,  # Категория со slug существует.
         is_published=True  # Пост опубликован.
     )
-    posts = category.posts.published().annotate_comments_count()
+    posts = (
+        category.posts.published()
+        .annotate_comments_count()
+        .order_by('-pub_date')
+    )
     page_obj = get_paginated_page(posts, request, POSTS_LIMIT_ON_PAGE)
     return render(
         request, 'blog/category.html', {

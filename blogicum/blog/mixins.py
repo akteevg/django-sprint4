@@ -49,7 +49,7 @@ class SuccessUrlMixin:
         # Для комментариев или если post_id передан в URL.
         if 'post_id' in self.kwargs:
             return reverse(
-                'blog:post_detail', 
+                'blog:post_detail',
                 kwargs={'post_id': self.kwargs['post_id']}
             )
 
