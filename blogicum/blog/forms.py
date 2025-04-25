@@ -8,18 +8,11 @@ class PostForm(forms.ModelForm):
 
     class Meta:
         model = Post
-        fields = [
-            'title',     # Заголовок поста.
-            'text',      # Основной текст.
-            'pub_date',  # Дата публикации.
-            'category',  # Категория.
-            'location',  # Местоположение.
-            'image'      # Изображение.
-        ]
+        exclude = ('author', 'is_published', 'created_at')
         widgets = {
             'pub_date': forms.DateTimeInput(
-                attrs={'type': 'datetime-local'},  # HTML-элемент даты/время
-                format='%Y-%m-%dT%H:%M'  # Формат для отображения даты
+                attrs={'type': 'datetime-local'},  # HTML-элемент даты/время.
+                format='%Y-%m-%dT%H:%M'  # Формат для отображения даты.
             ),
         }
 
