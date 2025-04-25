@@ -226,23 +226,29 @@ def category_posts(request, category_slug):
 
 def post_detail(request, post_id):
     """Функция для страницы публикации."""
-    post = get_object_or_404(
-        Post.objects.annotate(comment_count=Count('comments'))
-        .select_related(
-            'author',
-            'category',
-            'location'
-        ),
-        (
-            Q(is_published=True, pub_date__lte=now(),
-              category__is_published=True)
-            | Q(author=request.user)
-            if request.user.is_authenticated
-            else Q()
-        ),
-        pk=post_id
-    )
-    # Получаем комментарии с авторами и пагинацией.
+    # Базовый queryset с аннотацией количества комментариев.
+    queryset = Post.objects.annotate(comment_count=Count('comments'))
+    # Оптимизация запросов: загружаем связанные объекты одним запросом.
+    queryset = queryset.select_related('author', 'category', 'location')
+    
+    # Для авторизованных: 
+    #показываем опубликованные посты и свои неопубликованные.
+    if request.user.is_authenticated:
+        queryset = queryset.filter(
+            Q(
+                is_published=True,
+                pub_date__lte=now(),
+                category__is_published=True
+            ) | Q(author=request.user)
+        )
+    # Для неавторизованных: только опубликованные посты.
+    else:
+        queryset = queryset.published()
+    
+    # Получаем пост или 404, если не найден или нет прав доступа.
+    post = get_object_or_404(queryset, pk=post_id)
+    
+    # Получаем комментарии с авторами и пагинацией
     comments = post.comments.select_related('author').all()
     page_obj = get_paginated_page(comments, request, COMMENTS_LIMIT_ON_PAGE)
     return render(request, 'blog/detail.html', {
