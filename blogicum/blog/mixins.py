@@ -3,6 +3,8 @@ from django.contrib.auth.views import redirect_to_login
 from django.views.generic import DeleteView
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.db.models import Q
+from django.utils.timezone import now
 
 from .models import Comment, Post
 
@@ -72,3 +74,20 @@ class CommentMixin(AuthorRedirectMixin):
 
     model = Comment
     pk_url_kwarg = 'comment_id'
+
+
+class PostAccessMixin:
+    """Миксин для проверки доступа к постам."""
+
+    def get_queryset(self):
+        """Фильтрует посты в зависимости от прав доступа."""
+        queryset = super().get_queryset()
+        if not self.request.user.is_authenticated:
+            return queryset.published()
+        return queryset.filter(
+            Q(
+                is_published=True,
+                pub_date__lte=now(),
+                category__is_published=True
+            ) | Q(author=self.request.user)
+        )
