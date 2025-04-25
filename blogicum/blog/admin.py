@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.html import format_html
 
-from .models import Category, Location, Post
+from .models import Category, Comment, Location, Post
 
 User = get_user_model()  # Получаем модель пользователя.
 
@@ -91,7 +91,7 @@ class PostAdmin(admin.ModelAdmin):
     def image_preview(self, obj):
         if obj.image:
             return format_html('<img src="{}" width="100" />', obj.image.url)
-        return "Нет изображения"
+        return 'Нет изображения'
 
 
 @admin.register(Location)
@@ -99,6 +99,22 @@ class LocationAdmin(admin.ModelAdmin):
     list_display = ('name', 'is_published', 'created_at')
     list_editable = ('is_published',)
     list_filter = ('name', 'is_published',)
+
+
+@admin.register(Comment)
+class CommentAdmin(admin.ModelAdmin):
+    """Админка для комментариев."""
+    
+    list_display = (
+        'text',
+        'post',
+        'author',
+        'created_at',
+    )
+    list_display_links = ('text',)
+    list_filter = ('post', 'author', 'created_at')
+    search_fields = ('text', 'post__title', 'author__username')
+    readonly_fields = ('created_at',)
 
 
 admin.site.empty_value_display = 'Не задано'
