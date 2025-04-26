@@ -18,7 +18,12 @@ class AuthorCheckMixin(UserPassesTestMixin):
         return self.get_object().author == self.request.user
 
     def handle_no_permission(self):
-        """Перенаправление на страницу поста при отсутствии прав."""
+        """Перенаправление на страницу публикации при отсутствии прав."""
+        if hasattr(self.get_object(), 'post'):
+            return redirect(
+                'blog:post_detail',
+                post_id=self.get_object().post.pk
+            )
         return redirect(
             'blog:post_detail',
             post_id=self.get_object().pk

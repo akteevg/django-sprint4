@@ -169,32 +169,11 @@ class CommentCreateView(CommentMixin, CreateView):
         return super().form_valid(form)
 
 
-@login_required  # Только для залогиненых.
-def edit_comment(request, post_id, comment_id):
-    """Функция редактирования комментария к публикации."""
-    comment = get_object_or_404(Comment, pk=comment_id, post_id=post_id)
-
-    if comment.author != request.user:  # Проверка авторства.
-        return csrf_failure(
-            request,
-            reason="Редактирование чужого комментария запрещено"
-        )
-
-    # Сохранение изменения через POST-запрос.
-    if request.method == 'POST':
-        form = CommentForm(request.POST, instance=comment)
-        if form.is_valid():
-            form.save()
-            return redirect('blog:post_detail', post_id=post_id)
-    else:
-        # Форма изменения через GET-запрос.
-        form = CommentForm(instance=comment)
-
-    return render(
-        request,
-        'blog/comment.html',
-        {'form': form, 'comment': comment}
-    )
+class CommentEditView(AuthorCheckMixin, CommentMixin, UpdateView):
+    """Редактирование комментария к публикации."""
+    
+    model = Comment
+    pk_url_kwarg = 'comment_id'
 
 
 @login_required  # Только для залогиненых.

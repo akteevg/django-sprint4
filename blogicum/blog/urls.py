@@ -3,7 +3,8 @@ from django.urls import path
 from . import views
 from .views import (
     PostCreateView, PostEditView, PostDeleteView,
-    ProfileEditView, ProfileView, CommentCreateView
+    ProfileEditView, ProfileView, CommentCreateView,
+    CommentEditView
 )
 
 app_name = 'blog'  # namespase для приложения blog.
@@ -66,7 +67,7 @@ urlpatterns = [
     # Страница редактирования комментария.
     path(
         'posts/<int:post_id>/edit_comment/<int:comment_id>/',
-        views.edit_comment,
+        CommentEditView.as_view(),
         name='edit_comment'),
 
     # Страница удаления комментария.
