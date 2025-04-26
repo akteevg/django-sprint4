@@ -3,6 +3,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.db.models import Q
+from django.utils.timezone import now
+from django.views.generic import View
 
 
 class AuthorCheckMixin(UserPassesTestMixin):
@@ -37,4 +40,26 @@ class PostMixin(LoginRequiredMixin):
         """Добавляет форму в контекст."""
         context = super().get_context_data(**kwargs)
         context['form'] = self.get_form()
-        return context 
+        return context
+
+
+class PostVisibilityMixin(View):
+    """Миксин для проверки видимости постов."""
+    
+    def __init__(self, request=None):
+        super().__init__()
+        self.request = request
+    
+    def get_visible_posts(self):
+        """Возвращает queryset с учетом видимости постов."""
+        if self.request and self.request.user.is_authenticated:
+            return Q(
+                is_published=True,
+                pub_date__lte=now(),
+                category__is_published=True
+            ) | Q(author=self.request.user)
+        return Q(
+            is_published=True,
+            pub_date__lte=now(),
+            category__is_published=True
+        ) 

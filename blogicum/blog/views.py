@@ -4,7 +4,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -14,9 +14,9 @@ from django.views.generic import CreateView, ListView, UpdateView
 
 from pages.views import csrf_failure
 
-from .constants import POSTS_LIMIT_ON_MAIN_PAGE
+from .constants import POSTS_LIMIT_ON_PAGE, COMMENTS_LIMIT_ON_PAGE
 from .forms import CommentForm, PostForm, ProfileEditForm
-from .mixins import AuthorCheckMixin, PostMixin
+from .mixins import AuthorCheckMixin, PostMixin, PostVisibilityMixin
 from .models import Category, Comment, Post
 from .services import paginate_posts
 
@@ -29,12 +29,12 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('login')
 
 
-class ProfileView(ListView):
+class ProfileView(PostVisibilityMixin, ListView):
     """Класс отображения профиля."""
 
     template_name = 'blog/profile.html'
     context_object_name = 'page_obj'
-    paginate_by = POSTS_LIMIT_ON_MAIN_PAGE
+    paginate_by = POSTS_LIMIT_ON_PAGE
 
     def get_author(self):
         """Получает автора по username из URL."""
@@ -46,16 +46,9 @@ class ProfileView(ListView):
     def get_queryset(self):
         """Возвращает посты автора с аннотацией количества комментариев."""
         author = self.get_author()
-        posts = author.posts.with_comments_count().order_by('-pub_date')
-
-        # Если пользователь не автор, фильтруем только опубликованные посты
-        if (
-            not self.request.user.is_authenticated
-            or self.request.user != author
-        ):
-            posts = posts.published()
-
-        return posts
+        return author.posts.filter(
+            self.get_visible_posts()
+        ).with_comments_count().order_by('-pub_date')
 
     def get_context_data(self, **kwargs):
         """Добавляет автора в контекст."""
@@ -140,26 +133,20 @@ def post_detail(request, post_id):
             'category',
             'location'
         ).with_comments_count().order_by('-pub_date'),
+        PostVisibilityMixin(request).get_visible_posts(),
         pk=post_id
     )
 
-    # Условие видимости публикации для всех.
-    is_visible = (
-        post.is_published
-        and post.pub_date <= now()
-        and post.category.is_published
+    comments = post.comments.select_related('author').order_by('created_at')
+    _, page_obj = paginate_posts(
+        comments,
+        request.GET.get('page'),
+        COMMENTS_LIMIT_ON_PAGE
     )
-
-    # Автор, как исключение, видит все свои публикации.
-    if not is_visible and (
-        not request.user.is_authenticated
-        or post.author != request.user
-    ):
-        raise Http404
 
     return render(request, 'blog/detail.html', {
         'post': post,
-        'comments': post.comments.all(),
+        'page_obj': page_obj,
         'form': CommentForm()
     })
 
