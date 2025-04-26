@@ -4,7 +4,7 @@ from . import views
 from .views import (
     PostCreateView, PostEditView, PostDeleteView,
     ProfileEditView, ProfileView, CommentCreateView,
-    CommentEditView
+    CommentEditView, CommentDeleteView
 )
 
 app_name = 'blog'  # namespase для приложения blog.
@@ -73,6 +73,6 @@ urlpatterns = [
     # Страница удаления комментария.
     path(
         'posts/<int:post_id>/delete_comment/<int:comment_id>/',
-        views.delete_comment,
+        CommentDeleteView.as_view(),
         name='delete_comment'),
 ]

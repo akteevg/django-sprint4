@@ -5,7 +5,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.db.models import Q
 from django.utils.timezone import now
-from django.views.generic import View
+from django.views.generic import View, DeleteView
 
 from .forms import CommentForm
 
@@ -72,10 +72,9 @@ class PostVisibilityMixin(View):
         )
 
 
-class CommentMixin(LoginRequiredMixin):
+class CommentMixin:
     """Миксин для работы с комментариями."""
     
-    form_class = CommentForm
     template_name = 'blog/comment.html'
     
     def get_success_url(self):

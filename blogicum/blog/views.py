@@ -158,8 +158,10 @@ def post_detail(request, post_id):
     })
 
 
-class CommentCreateView(CommentMixin, CreateView):
+class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
     """Создание комментария к публикации."""
+    
+    form_class = CommentForm
     
     def form_valid(self, form):
         """Присваиваем комментарию публикацию и автора."""
@@ -173,23 +175,19 @@ class CommentEditView(AuthorCheckMixin, CommentMixin, UpdateView):
     """Редактирование комментария к публикации."""
     
     model = Comment
+    form_class = CommentForm
     pk_url_kwarg = 'comment_id'
 
 
-@login_required  # Только для залогиненых.
-def delete_comment(request, post_id, comment_id):
-    """Функция удаления комментария к публикации."""
-    comment = get_object_or_404(Comment, pk=comment_id, post_id=post_id)
+class CommentDeleteView(AuthorCheckMixin, CommentMixin, DeleteView):
+    """Удаление комментария к публикации."""
+    
+    model = Comment
+    pk_url_kwarg = 'comment_id'
 
-    if comment.author != request.user:  # Проверка авторства.
-        return csrf_failure(
-            request,
-            reason="Удаление чужого комментария запрещено"
+    def get_success_url(self):
+        """Перенаправление на страницу публикации после удаления."""
+        return reverse(
+            'blog:post_detail',
+            kwargs={'post_id': self.object.post.pk}
         )
-
-    if request.method == 'POST':  # Удаление только через POST-запрос.
-        comment.delete()
-        return redirect('blog:post_detail', post_id=post_id)
-
-    # Страница подтверждения через GET-запрос.
-    return render(request, 'blog/comment.html', {'comment': comment})
