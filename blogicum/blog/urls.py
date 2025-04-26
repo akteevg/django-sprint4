@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from .views import PostCreateView, PostEditView, ProfileEditView, ProfileView
+from .views import PostCreateView, PostEditView, PostDeleteView, ProfileEditView, ProfileView
 
 app_name = 'blog'  # namespase для приложения blog.
 
@@ -33,7 +33,7 @@ urlpatterns = [
     # Страница удаления публикации.
     path(
         'posts/<int:post_id>/delete/',
-        views.delete_post,
+        PostDeleteView.as_view(),
         name='delete_post'),
 
     # Страница категории.

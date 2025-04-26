@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, ListView, UpdateView
+from django.views.generic import CreateView, ListView, UpdateView, DeleteView
 
 from pages.views import csrf_failure
 
@@ -100,6 +100,13 @@ class PostEditView(AuthorCheckMixin, PostMixin, UpdateView):
         )
 
 
+class PostDeleteView(AuthorCheckMixin, PostMixin, DeleteView):
+    """Удаление существующей публикации (только для автора)."""
+    
+    model = Post
+    template_name = 'blog/create.html'
+
+
 def index(request):
     """Функция для главной страницы."""
     posts = Post.objects.published_with_comments().order_by('-pub_date')
@@ -148,30 +155,6 @@ def post_detail(request, post_id):
         'post': post,
         'page_obj': page_obj,
         'form': CommentForm()
-    })
-
-
-@login_required  # Только для залогиненых.
-def delete_post(request, post_id):
-    """Функция удаления публикации."""
-    post = get_object_or_404(Post, pk=post_id)
-
-    if post.author != request.user:  # Проверка авторства.
-        return csrf_failure(
-            request,
-            reason='Удаление чужой публикации запрещено'
-        )
-
-    # Подтверждение удаления публикации через POST-запрос.
-    if request.method == 'POST':
-        post.delete()
-        return redirect('blog:profile', username=request.user.username)
-
-    # Форма удаления через GET-запрос.
-    form = PostForm(instance=post)
-    return render(request, 'blog/create.html', {
-        'form': form,
-        'object': post  # Передаем объект для использования в шаблоне.
     })
 
 
