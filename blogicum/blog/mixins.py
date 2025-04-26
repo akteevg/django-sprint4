@@ -7,6 +7,8 @@ from django.db.models import Q
 from django.utils.timezone import now
 from django.views.generic import View
 
+from .forms import CommentForm
+
 
 class AuthorCheckMixin(UserPassesTestMixin):
     """Миксин для проверки авторства."""
@@ -62,4 +64,18 @@ class PostVisibilityMixin(View):
             is_published=True,
             pub_date__lte=now(),
             category__is_published=True
-        ) 
+        )
+
+
+class CommentMixin(LoginRequiredMixin):
+    """Миксин для работы с комментариями."""
+    
+    form_class = CommentForm
+    template_name = 'blog/comment.html'
+    
+    def get_success_url(self):
+        """Перенаправление на страницу публикации после успешного действия."""
+        return reverse(
+            'blog:post_detail',
+            kwargs={'post_id': self.kwargs['post_id']}
+        )

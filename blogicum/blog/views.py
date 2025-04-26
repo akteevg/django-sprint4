@@ -16,7 +16,7 @@ from pages.views import csrf_failure
 
 from .constants import POSTS_LIMIT_ON_PAGE, COMMENTS_LIMIT_ON_PAGE
 from .forms import CommentForm, PostForm, ProfileEditForm
-from .mixins import AuthorCheckMixin, PostMixin, PostVisibilityMixin
+from .mixins import AuthorCheckMixin, PostMixin, PostVisibilityMixin, CommentMixin
 from .models import Category, Comment, Post
 from .services import paginate_posts
 
@@ -158,19 +158,15 @@ def post_detail(request, post_id):
     })
 
 
-@require_POST  # Только для POST-запросов.
-@login_required  # Только для залогиненых.
-def add_comment(request, post_id):
-    """Функция создания комментария к посту."""
-    post = get_object_or_404(Post, pk=post_id)
-    form = CommentForm(request.POST)
-
-    if form.is_valid():
-        comment = form.save(commit=False)
-        comment.post = post
-        comment.author = request.user
-        comment.save()
-    return redirect('blog:post_detail', post_id=post_id)
+class CommentCreateView(CommentMixin, CreateView):
+    """Создание комментария к публикации."""
+    
+    def form_valid(self, form):
+        """Присваиваем комментарию публикацию и автора."""
+        post = get_object_or_404(Post, pk=self.kwargs['post_id'])
+        form.instance.post = post
+        form.instance.author = self.request.user
+        return super().form_valid(form)
 
 
 @login_required  # Только для залогиненых.

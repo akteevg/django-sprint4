@@ -1,7 +1,10 @@
 from django.urls import path
 
 from . import views
-from .views import PostCreateView, PostEditView, PostDeleteView, ProfileEditView, ProfileView
+from .views import (
+    PostCreateView, PostEditView, PostDeleteView,
+    ProfileEditView, ProfileView, CommentCreateView
+)
 
 app_name = 'blog'  # namespase для приложения blog.
 
@@ -57,7 +60,7 @@ urlpatterns = [
     # Страница добавления комментария.
     path(
         'posts/<int:post_id>/comment/',
-        views.add_comment,
+        CommentCreateView.as_view(),
         name='add_comment'),
 
     # Страница редактирования комментария.
