@@ -100,7 +100,7 @@ CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
 
 LOGIN_REDIRECT_URL = 'blog:index'
 LOGIN_URL = 'login'
-LOGOUT_REDIRECT_URL = 'blog:index'
+LOGOUT_REDIRECT_URL = 'logout'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'

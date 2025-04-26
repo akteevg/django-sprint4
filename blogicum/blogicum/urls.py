@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth import logout
+from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from django.views.decorators.http import require_GET
 from django.shortcuts import render
@@ -29,8 +29,12 @@ urlpatterns = [
     # URL для дополнительных страниц приложения pages.
     path('pages/', include('pages.urls')),
 
-    # Кастомный logout.
-    path('auth/logout/', custom_logout, name='logout'),  # Выход из аккаунта.
+    # Кастомный logout с нашим шаблоном.
+    path(
+        'auth/logout/',
+        auth_views.LogoutView.as_view(template_name='registration/logged_out.html'),
+        name='logout'
+    ),  # Выход из аккаунта.
     path('auth/registration/',
          SignUpView.as_view(),
          name='registration'),  # Регистрация пользователя.
