@@ -20,7 +20,7 @@ class PostQuerySet(models.QuerySet):
     def with_comments_count(self):
         """Добавляет аннотацию с количеством комментариев."""
         return self.annotate(
-            comments_count=models.Count('comments')
+            comment_count=models.Count('comments')
         )
 
     def published_with_comments(self):

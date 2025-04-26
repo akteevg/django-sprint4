@@ -4,20 +4,21 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator
 from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DetailView, UpdateView
+from django.views.generic import CreateView, ListView, UpdateView
 
 from pages.views import csrf_failure
 
 from .constants import POSTS_LIMIT_ON_MAIN_PAGE
-from .forms import CommentForm, PostForm
+from .forms import CommentForm, PostForm, ProfileEditForm
+from .mixins import AuthorCheckMixin, PostMixin
 from .models import Category, Comment, Post
+from .services import paginate_posts
 
 
 class SignUpView(CreateView):
@@ -28,47 +29,39 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('login')
 
 
-class ProfileView(DetailView):
+class ProfileView(ListView):
     """Класс отображения профиля."""
 
-    model = User
     template_name = 'blog/profile.html'
-    slug_field = 'username'
-    slug_url_kwarg = 'username'
-    context_object_name = 'profile'
+    context_object_name = 'page_obj'
+    paginate_by = POSTS_LIMIT_ON_MAIN_PAGE
+
+    def get_author(self):
+        """Получает автора по username из URL."""
+        return get_object_or_404(
+            User,
+            username=self.kwargs['username']
+        )
+
+    def get_queryset(self):
+        """Возвращает посты автора с аннотацией количества комментариев."""
+        author = self.get_author()
+        posts = author.posts.with_comments_count().order_by('-pub_date')
+
+        # Если пользователь не автор, фильтруем только опубликованные посты
+        if (
+            not self.request.user.is_authenticated
+            or self.request.user != author
+        ):
+            posts = posts.published()
+
+        return posts
 
     def get_context_data(self, **kwargs):
-        """Добавляем пагинацию постов пользователя в контекст."""
+        """Добавляет автора в контекст."""
         context = super().get_context_data(**kwargs)
-        posts = Post.objects.filter(
-            author=self.object
-        ).annotate(
-            comment_count=Count('comments')
-        ).order_by('-pub_date')
-        paginator = Paginator(posts, POSTS_LIMIT_ON_MAIN_PAGE)
-        page_number = self.request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
-        context['page_obj'] = page_obj
+        context['profile'] = self.get_author()
         return context
-
-
-class ProfileEditForm(forms.ModelForm):
-    """Создаем свою форму с ограниченным набором доступных полей."""
-
-    class Meta:
-        model = User
-        fields = ['first_name', 'last_name', 'username', 'email']
-
-    def clean_username(self):
-        """Проверка уникальности username при редактировании профиля."""
-        username = self.cleaned_data['username']  # Новый username из формы
-        # Ищем пользователей с таким же username,
-        # исключая текущего (self.instance).
-        if User.objects.exclude(
-            pk=self.instance.pk
-        ).filter(username=username).exists():
-            raise forms.ValidationError('Это имя пользователя уже занято.')
-        return username  # Если проверка пройдена — возвращаем значение
 
 
 class ProfileEditView(LoginRequiredMixin, UpdateView):
@@ -79,81 +72,36 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         """Перенаправление в профиль после редактирования."""
-        return reverse_lazy(
+        return reverse(
             'blog:profile',
             kwargs={'username': self.request.user.username}
         )
 
     def get_object(self, queryset=None):
-        """Проверяем, что пользователь редактирует свой профиль."""
-        user = self.request.user
-        if not user.is_authenticated:
-            raise PermissionDenied
-        return user
+        """Возвращает текущего пользователя для редактирования."""
+        return self.request.user
 
 
-class PostCreateView(LoginRequiredMixin, CreateView):
+class PostCreateView(PostMixin, CreateView):
     """Создание новой публикации (только для авторизованных)."""
 
     form_class = PostForm
-    template_name = 'blog/create.html'
 
     def form_valid(self, form):
         """Авторство присваиваем текущему пользователю."""
         form.instance.author = self.request.user
         return super().form_valid(form)
 
-    def get_success_url(self):
-        """Перенаправление в профиль после создания."""
-        return reverse_lazy(
-            'blog:profile',
-            kwargs={'username': self.request.user.username}
-        )
 
-
-class PostEditView(LoginRequiredMixin, UpdateView):
+class PostEditView(AuthorCheckMixin, PostMixin, UpdateView):
     """Редактирование существующей публикации (только для автора)."""
 
     model = Post
     form_class = PostForm
-    template_name = 'blog/create.html'
-    pk_url_kwarg = 'post_id'
-
-    def check_access(self, request, *args, **kwargs):
-        """
-        Проверка прав доступа.
-        1. Если пользователь не авторизован -> редирект на публикацию.
-        2. Если пользователь не автор -> редирект на публикацию.
-        3. Если проверки пройдены -> разрешено редактирование публикации.
-        """
-        # Получаем публикацию.
-        post = self.get_object()
-
-        # Проверяем на авторизацию:
-        if not request.user.is_authenticated:
-            return redirect('blog:post_detail', post_id=post.pk)
-
-        # Проверяем на автора:
-        if post.author != request.user:
-            return redirect('blog:post_detail', post_id=post.pk)
-
-        return None  # Если проверки пройдены.
-
-    def dispatch(self, request, *args, **kwargs):
-        """
-        Основной метод обработки запроса.
-        Вызывается первым для любых типов запросов (GET, POST и т.д.).
-        """
-        # Проверка доступа.
-        if (access_error := self.check_access(request, *args, **kwargs)):
-            return access_error
-
-        # Если проверки пройдены - продолжается стандартная обработка.
-        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         """Перенаправление на страницу публикации после редактирования."""
-        return reverse_lazy(
+        return reverse(
             'blog:post_detail',
             kwargs={'post_id': self.object.pk}
         )
@@ -161,15 +109,9 @@ class PostEditView(LoginRequiredMixin, UpdateView):
 
 def index(request):
     """Функция для главной страницы."""
-    posts = Post.objects.published().annotate(
-        comment_count=Count('comments')
-    ).order_by('-pub_date')
-    paginator = Paginator(posts, POSTS_LIMIT_ON_MAIN_PAGE)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    return render(
-        request, 'blog/index.html', {'page_obj': page_obj}
-    )
+    posts = Post.objects.published_with_comments().order_by('-pub_date')
+    _, page_obj = paginate_posts(posts, request.GET.get('page'))
+    return render(request, 'blog/index.html', {'page_obj': page_obj})
 
 
 def category_posts(request, category_slug):
@@ -179,12 +121,8 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True
     )
-    posts = category.posts.published().annotate(
-        comment_count=Count('comments')
-    ).order_by('-pub_date')
-    paginator = Paginator(posts, POSTS_LIMIT_ON_MAIN_PAGE)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    posts = category.posts.published_with_comments().order_by('-pub_date')
+    _, page_obj = paginate_posts(posts, request.GET.get('page'))
 
     return render(
         request, 'blog/category.html', {
@@ -201,9 +139,7 @@ def post_detail(request, post_id):
             'author',
             'category',
             'location'
-        ).annotate(
-            comment_count=Count('comments')
-        ).order_by('-pub_date'),
+        ).with_comments_count().order_by('-pub_date'),
         pk=post_id
     )
 

@@ -1,6 +1,26 @@
 from django import forms
+from django.contrib.auth.models import User
 
 from .models import Comment, Post
+
+
+class ProfileEditForm(forms.ModelForm):
+    """Форма для редактирования профиля пользователя."""
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'username', 'email')
+
+    def clean_username(self):
+        """Проверка уникальности username при редактировании профиля."""
+        username = self.cleaned_data['username']  # Новый username из формы
+        # Ищем пользователей с таким же username,
+        # исключая текущего (self.instance).
+        if User.objects.exclude(
+            pk=self.instance.pk
+        ).filter(username=username).exists():
+            raise forms.ValidationError('Это имя пользователя уже занято.')
+        return username  # Если проверка пройдена — возвращаем значение
 
 
 class PostForm(forms.ModelForm):
