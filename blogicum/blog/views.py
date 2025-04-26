@@ -5,6 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -17,7 +18,6 @@ from pages.views import csrf_failure
 from .constants import POSTS_LIMIT_ON_MAIN_PAGE
 from .forms import CommentForm, PostForm
 from .models import Category, Comment, Post
-from .services import filter_published_posts
 
 
 class SignUpView(CreateView):
@@ -40,7 +40,11 @@ class ProfileView(DetailView):
     def get_context_data(self, **kwargs):
         """Добавляем пагинацию постов пользователя в контекст."""
         context = super().get_context_data(**kwargs)
-        posts = Post.objects.filter(author=self.object)
+        posts = Post.objects.filter(
+            author=self.object
+        ).annotate(
+            comment_count=Count('comments')
+        ).order_by('-pub_date')
         paginator = Paginator(posts, POSTS_LIMIT_ON_MAIN_PAGE)
         page_number = self.request.GET.get('page')
         page_obj = paginator.get_page(page_number)
@@ -157,7 +161,9 @@ class PostEditView(LoginRequiredMixin, UpdateView):
 
 def index(request):
     """Функция для главной страницы."""
-    posts = filter_published_posts(Post.objects)
+    posts = Post.objects.published().annotate(
+        comment_count=Count('comments')
+    ).order_by('-pub_date')
     paginator = Paginator(posts, POSTS_LIMIT_ON_MAIN_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -168,12 +174,14 @@ def index(request):
 
 def category_posts(request, category_slug):
     """Функция для страницы категории."""
-    category = get_object_or_404(  # Получаем категорию или 404.
+    category = get_object_or_404(
         Category,
-        slug=category_slug,  # Категория со slug существует.
-        is_published=True  # Пост опубликован.
+        slug=category_slug,
+        is_published=True
     )
-    posts = filter_published_posts(category.posts.all())
+    posts = category.posts.published().annotate(
+        comment_count=Count('comments')
+    ).order_by('-pub_date')
     paginator = Paginator(posts, POSTS_LIMIT_ON_MAIN_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -193,7 +201,9 @@ def post_detail(request, post_id):
             'author',
             'category',
             'location'
-        ),
+        ).annotate(
+            comment_count=Count('comments')
+        ).order_by('-pub_date'),
         pk=post_id
     )
 

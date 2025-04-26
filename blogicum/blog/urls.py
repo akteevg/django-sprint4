@@ -7,7 +7,10 @@ app_name = 'blog'  # namespase для приложения blog.
 
 urlpatterns = [
     # Главная страница.
-    path('', views.index, name='index'),
+    path(
+        '',
+        views.index,
+        name='index'),
 
     # Страница создания публикации.
     path(
