@@ -104,7 +104,7 @@ class LocationAdmin(admin.ModelAdmin):
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     """Админка для комментариев."""
-    
+
     list_display = (
         'text',
         'post',

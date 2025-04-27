@@ -15,18 +15,15 @@ class LogoutMiddleware:
         if (request.path == '/auth/logout/'
                 and request.method == 'GET'
                 and request.user.is_authenticated):
-            
+
             # Создаем POST-запрос
             request.method = 'POST'
-            
+
             # Получаем CSRF-токен
             csrf_token = get_token(request)
-            
+
             # Создаем POST-данные с CSRF-токеном
             request.POST = request.POST.copy()
             request.POST['csrfmiddlewaretoken'] = csrf_token
-            
-            # Обрабатываем запрос и возвращаем ответ
-            return self.get_response(request)
-            
+
         return self.get_response(request)
