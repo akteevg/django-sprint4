@@ -42,7 +42,6 @@ class BlogUserAdmin(BaseUserAdmin):
 
 class PostInline(admin.TabularInline):
     model = Post
-    # fk_name = 'category'
     extra = 0
     fields = (
         'title',

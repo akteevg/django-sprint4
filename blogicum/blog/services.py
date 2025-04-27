@@ -1,5 +1,3 @@
-"""Сервисные функции для приложения blog."""
-
 from django.core.paginator import Paginator
 from django.db.models import QuerySet
 

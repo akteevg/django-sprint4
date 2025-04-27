@@ -16,9 +16,13 @@ urlpatterns = [
     # URL для дополнительных страниц приложения pages.
     path('pages/', include('pages.urls')),
 
+    # URL для регистрации пользователя.
     path('auth/registration/',
          SignUpView.as_view(),
          name='registration'),
+
+    # Стандартные URL-адреса аутентификации Django.
+    path('auth/', include('django.contrib.auth.urls')),
 ]
 
 # Отладочные URL в режиме разработки.
