@@ -104,8 +104,18 @@ class LocationAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ('post', 'author', 'created_at')
-    list_filter = ('post', 'author',)
+    """Админка для комментариев."""
+    
+    list_display = (
+        'text',
+        'post',
+        'author',
+        'created_at',
+    )
+    list_display_links = ('text',)
+    list_filter = ('post', 'author', 'created_at')
+    search_fields = ('text', 'post__title', 'author__username')
+    readonly_fields = ('created_at',)
 
 
 admin.site.empty_value_display = 'Не задано'

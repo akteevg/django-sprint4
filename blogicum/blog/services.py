@@ -1,6 +1,9 @@
-from django.core.paginator import Paginator
+"""Сервисные функции для приложения blog."""
 
-from .constants import TRUNCATE_LENGTH
+from django.core.paginator import Paginator
+from django.db.models import QuerySet
+
+from .constants import (POSTS_LIMIT_ON_PAGE, TRUNCATE_LENGTH)
 
 
 def truncate_text(text, length=TRUNCATE_LENGTH):
@@ -8,8 +11,11 @@ def truncate_text(text, length=TRUNCATE_LENGTH):
     return text[:length] + '...' if len(text) > length else text
 
 
-def get_paginated_page(queryset, request, per_page):
-    """Создаем пагинатор и возвращаем страницу с объектами."""
-    paginator = Paginator(queryset, per_page)
-    page_number = request.GET.get('page')
-    return paginator.get_page(page_number)
+def paginate_posts(
+        posts: QuerySet, page_number: str,
+        page_size: int = POSTS_LIMIT_ON_PAGE
+    ) -> tuple[Paginator, object]:
+    """Создает пагинатор для постов и возвращает страницу."""
+    paginator = Paginator(posts, page_size)
+    page_obj = paginator.get_page(page_number)
+    return paginator, page_obj

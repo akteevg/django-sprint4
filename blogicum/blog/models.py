@@ -1,28 +1,51 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Count
 from django.utils.timezone import now
 
 from .constants import CHAR_FIELD_MAX_LENGTH
 from .services import truncate_text
 
+
+class PostQuerySet(models.QuerySet):
+    """Кастомный QuerySet для модели Post."""
+
+    def published(self):
+        """Возвращает опубликованные посты."""
+        return self.filter(
+            is_published=True,
+            pub_date__lte=now(),
+            category__is_published=True
+        )
+
+    def with_comments_count(self):
+        """Добавляет аннотацию с количеством комментариев."""
+        return self.annotate(
+            comment_count=models.Count('comments')
+        )
+
+    def published_with_comments(self):
+        """Возвращает опубликованные посты с количеством комментариев."""
+        return self.published().with_comments_count()
+
+
 User = get_user_model()
 
 
 class CreatedAtAbstract(models.Model):
-    """Абстрактная модель."""
+    """Абстрактная модель с полем даты создания."""
 
     created_at = models.DateTimeField(
-        'Добавлено', auto_now_add=True
+        'Добавлено',
+        auto_now_add=True
     )
 
     class Meta:
         abstract = True
-        ordering = ('-created_at',)
+        ordering = ('created_at',)
 
 
 class IsPublishedCreatedAtAbstract(CreatedAtAbstract):
-    """Абстрактная модель."""
+    """Абстрактная модель с полями публикации и даты создания."""
 
     is_published = models.BooleanField(
         'Опубликовано',
@@ -52,6 +75,8 @@ class PostQuerySet(models.QuerySet):
 
 class Post(IsPublishedCreatedAtAbstract):
     """Публикация."""
+
+    objects = PostQuerySet.as_manager()
 
     title = models.CharField(
         'Заголовок',
@@ -116,7 +141,7 @@ class Category(IsPublishedCreatedAtAbstract):
                   'дефис и подчёркивание.'
     )
 
-    class Meta:
+    class Meta(CreatedAtAbstract.Meta):
         verbose_name = 'категория'
         verbose_name_plural = 'Категории'
 
@@ -133,7 +158,7 @@ class Location(IsPublishedCreatedAtAbstract):
         default='Планета Земля'
     )
 
-    class Meta:
+    class Meta(CreatedAtAbstract.Meta):
         verbose_name = 'местоположение'
         verbose_name_plural = 'Местоположения'
 
@@ -142,6 +167,8 @@ class Location(IsPublishedCreatedAtAbstract):
 
 
 class Comment(CreatedAtAbstract):
+    """Комментарий к публикации."""
+
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,

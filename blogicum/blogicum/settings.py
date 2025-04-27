@@ -33,6 +33,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'blog.middleware.LogoutMiddleware',
 ]
 
 INTERNAL_IPS = ['127.0.0.1',]
@@ -99,8 +100,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
 
 LOGIN_REDIRECT_URL = 'blog:index'
-LOGIN_URL = '/auth/login'
-LOGOUT_REDIRECT_URL = 'blog:index'
+
+LOGIN_URL = 'login'
+# LOGOUT_REDIRECT_URL = 'logout'
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
