@@ -3,40 +3,78 @@
   <nav class="navbar navbar-light" style="background-color: lightskyblue">
     <div class="container">
       <a class="navbar-brand" href="{% url 'blog:index' %}">
-        <img src="{% static 'img/logo.png' %}" width="30" height="30" class="d-inline-block align-top" alt="">
+        <img src="{% static 'img/logo.png' %}" width="30" height="30"
+          class="d-inline-block align-top" alt="">
         Блогикум
       </a>
       {% with request.resolver_match.view_name as view_name %}
-        <ul class="nav  nav-pills">
+        <ul class="nav nav-pills align-items-center">
           <li class="nav-item">
-            <a class="nav-link {% if view_name == 'pages:about' %} text-white {% endif %}" href="{% url 'pages:about' %}">
+            <a class="nav-link {% if view_name == 'pages:about' %}
+              text-white {% endif %}" href="{% url 'pages:about' %}">
               О проекте
             </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link {% if view_name == 'pages:rules' %} text-white {% endif %}" href="{% url 'pages:rules' %}">
+            <a class="nav-link {% if view_name == 'pages:rules' %}
+              text-white {% endif %}" href="{% url 'pages:rules' %}">
               Правила
             </a>
           </li>
           {% if user.is_authenticated %}
-            <div class="btn-group" role="group" aria-label="Basic outlined example">
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
-                  href="{% url 'blog:create_post' %}">Написать пост</a></button>
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
-                  href="{% url 'blog:profile' user.username %}">{{ user.username }}</a></button>
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
-                  href="{% url 'logout' %}">Выйти</a></button>
-            </div>
+            <!-- Написать пост -->
+            <a href="{% url 'blog:create_post' %}"
+              class="btn btn-outline-primary text-primary hover-white mx-1">
+              Написать пост
+            </a>
+
+            <!-- Пользователь -->
+            <a href="{% url 'blog:profile' user.username %}"
+              class="btn btn-outline-primary text-primary hover-white mx-1">
+              {{ user.username }}
+            </a>
+
+            <!-- Выйти -->
+            <form action="{% url 'logout' %}" method="post"
+              class="d-inline m-0">
+              {% csrf_token %}
+              <button type="submit"
+                class="btn btn-outline-primary text-primary hover-white mx-1">
+                Выйти
+              </button>
+            </form>
           {% else %}
-            <div class="btn-group" role="group" aria-label="Basic outlined example">
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
-                  href="{% url 'login' %}">Войти</a></button>
-              <button type="button" class="btn btn-outline-primary"><a class="text-decoration-none text-reset"
-                  href="{% url 'registration' %}">Регистрация</a></button>
-            </div>
+            <a href="{% url 'login' %}"
+              class="btn btn-outline-primary text-primary hover-white mx-1">
+              Войти
+            </a>
+            <a href="{% url 'registration' %}"
+              class="btn btn-outline-primary text-primary hover-white mx-1">
+              Регистрация
+            </a>
           {% endif %}
         </ul>
       {% endwith %}
     </div>
   </nav>
 </header>
+
+<style>
+  /* Кастомные стили для всех кнопок */
+  .btn-outline-primary {
+    border-radius: 20px !important; /* Скругленные углы */
+    padding: 6px 16px; /* Фиксированные отступы */
+    min-width: 120px; /* Минимальная ширина */
+    transition: all 0.3s; /* Плавная анимация */
+  }
+
+  .btn-outline-primary.hover-white:hover {
+    color: white !important;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+  }
+
+  .mx-1 {
+    margin: 0 4px !important; /* Отступы между кнопками */
+  }
+</style>

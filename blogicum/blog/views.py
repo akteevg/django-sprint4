@@ -72,8 +72,17 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
 class PostCreateView(PostMixin, CreateView):
     """Создание новой публикации (только для авторизованных)."""
 
+    model = Post
     form_class = PostForm
 
+    def get_object(self):
+        """
+        Переопределяем, чтобы избежать поиска объекта.
+        PostMixin ожидает post_id в URL, что не требуется для CreateView.
+        """
+        return None
+
+    @transaction.atomic
     def form_valid(self, form):
         """Авторство присваиваем текущему пользователю."""
         form.instance.author = self.request.user

@@ -18,10 +18,7 @@ urlpatterns = [
 
     path('auth/registration/',
          SignUpView.as_view(),
-         name='registration'),  # Регистрация пользователя.
-
-    # Стандартные URL-адреса аутентификации Django.
-    path('auth/', include('django.contrib.auth.urls')),
+         name='registration'),
 ]
 
 # Отладочные URL в режиме разработки.

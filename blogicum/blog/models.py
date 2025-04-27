@@ -53,8 +53,24 @@ class IsPublishedCreatedAtAbstract(CreatedAtAbstract):
         help_text='Снимите галочку, чтобы скрыть публикацию.'
     )
 
-    class Meta:
+    class Meta(CreatedAtAbstract.Meta):
         abstract = True
+
+
+class PostQuerySet(models.QuerySet):
+    """Кастомизация QuerySet. Определяет методы для фильтрации и аннотации."""
+
+    def published(self):
+        """Фильтрация опубликованных публикаций."""
+        return self.filter(
+            is_published=True,
+            pub_date__lte=now(),
+            category__is_published=True
+        )
+
+    def annotate_comments_count(self):
+        """Количество комментариев к каждой публикации."""
+        return self.annotate(comment_count=Count('comments'))
 
 
 class Post(IsPublishedCreatedAtAbstract):
@@ -75,7 +91,8 @@ class Post(IsPublishedCreatedAtAbstract):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        verbose_name='Автор публикации'
+        verbose_name='Автор публикации',
+        related_name='posts'
     )
     location = models.ForeignKey(
         'Location',
@@ -96,6 +113,7 @@ class Post(IsPublishedCreatedAtAbstract):
         blank=True,
         null=True
     )
+    objects = PostQuerySet.as_manager()
 
     class Meta:
         verbose_name = 'публикация'
@@ -154,7 +172,6 @@ class Comment(CreatedAtAbstract):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        related_name='comments',
         verbose_name='Публикация'
     )
     author = models.ForeignKey(
