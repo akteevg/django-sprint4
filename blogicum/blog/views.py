@@ -1,22 +1,16 @@
-from django import forms
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Q
-from django.http import Http404
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
-from django.utils.timezone import now
-from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
-
-from pages.views import csrf_failure
 
 from .constants import POSTS_LIMIT_ON_PAGE, COMMENTS_LIMIT_ON_PAGE
 from .forms import CommentForm, PostForm, ProfileEditForm
-from .mixins import AuthorCheckMixin, PostMixin, PostVisibilityMixin, CommentMixin
+from .mixins import (AuthorCheckMixin,
+                     PostMixin,
+                     PostVisibilityMixin,
+                     CommentMixin)
 from .models import Category, Comment, Post
 from .services import paginate_posts
 
@@ -33,7 +27,7 @@ class ProfileView(PostVisibilityMixin, ListView):
     """Класс отображения профиля."""
 
     template_name = 'blog/profile.html'
-    context_object_name = 'page_obj'
+    context_object_name = 'posts'
     paginate_by = POSTS_LIMIT_ON_PAGE
 
     def get_author(self):
@@ -102,7 +96,7 @@ class PostEditView(AuthorCheckMixin, PostMixin, UpdateView):
 
 class PostDeleteView(AuthorCheckMixin, PostMixin, DeleteView):
     """Удаление существующей публикации (только для автора)."""
-    
+
     model = Post
     template_name = 'blog/create.html'
 
@@ -160,9 +154,9 @@ def post_detail(request, post_id):
 
 class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
     """Создание комментария к публикации."""
-    
+
     form_class = CommentForm
-    
+
     def form_valid(self, form):
         """Присваиваем комментарию публикацию и автора."""
         post = get_object_or_404(Post, pk=self.kwargs['post_id'])
@@ -173,7 +167,7 @@ class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
 
 class CommentEditView(AuthorCheckMixin, CommentMixin, UpdateView):
     """Редактирование комментария к публикации."""
-    
+
     model = Comment
     form_class = CommentForm
     pk_url_kwarg = 'comment_id'
@@ -181,7 +175,7 @@ class CommentEditView(AuthorCheckMixin, CommentMixin, UpdateView):
 
 class CommentDeleteView(AuthorCheckMixin, CommentMixin, DeleteView):
     """Удаление комментария к публикации."""
-    
+
     model = Comment
     pk_url_kwarg = 'comment_id'
 

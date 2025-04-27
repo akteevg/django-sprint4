@@ -5,12 +5,10 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.db.models import Q
 from django.utils.timezone import now
-from django.views.generic import View, DeleteView
-
-from .forms import CommentForm
+from django.views.generic import View
 
 
-class AuthorCheckMixin(UserPassesTestMixin):
+class AuthorCheckMixin(LoginRequiredMixin, UserPassesTestMixin):
     """Миксин для проверки авторства."""
 
     def test_func(self):
@@ -18,7 +16,9 @@ class AuthorCheckMixin(UserPassesTestMixin):
         return self.get_object().author == self.request.user
 
     def handle_no_permission(self):
-        """Перенаправление на страницу публикации при отсутствии прав."""
+        """Перенаправление при отсутствии прав."""
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
         if hasattr(self.get_object(), 'post'):
             return redirect(
                 'blog:post_detail',
@@ -52,11 +52,11 @@ class PostMixin(LoginRequiredMixin):
 
 class PostVisibilityMixin(View):
     """Миксин для проверки видимости постов."""
-    
+
     def __init__(self, request=None):
         super().__init__()
         self.request = request
-    
+
     def get_visible_posts(self):
         """Возвращает queryset с учетом видимости постов."""
         if self.request and self.request.user.is_authenticated:
@@ -74,9 +74,9 @@ class PostVisibilityMixin(View):
 
 class CommentMixin:
     """Миксин для работы с комментариями."""
-    
+
     template_name = 'blog/comment.html'
-    
+
     def get_success_url(self):
         """Перенаправление на страницу публикации после успешного действия."""
         return reverse(
