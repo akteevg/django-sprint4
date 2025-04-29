@@ -11,7 +11,7 @@ from .forms import CommentForm, PostForm, ProfileEditForm
 from .mixins import (AuthorCheckMixin,
                      PostMixin,
                      CommentMixin)
-from .models import Category, Comment, Post
+from .models import Category, Post
 from .services import paginate_posts
 
 
