@@ -33,7 +33,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'blog.middleware.LogoutMiddleware',
 ]
 
 INTERNAL_IPS = ['127.0.0.1',]
@@ -108,5 +107,4 @@ EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES_DIR = BASE_DIR / 'templates'

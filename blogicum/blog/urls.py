@@ -1,11 +1,7 @@
 from django.urls import path
 
 from . import views
-from .views import (
-    PostCreateView, PostEditView, PostDeleteView,
-    ProfileEditView, ProfileView, CommentCreateView,
-    CommentEditView, CommentDeleteView
-)
+
 
 app_name = 'blog'  # namespase для приложения blog.
 
@@ -19,7 +15,7 @@ urlpatterns = [
     # Страница создания публикации.
     path(
         'posts/create/',
-        PostCreateView.as_view(),
+        views.PostCreateView.as_view(),
         name='create_post'),
 
     # Страница публикации.
@@ -31,13 +27,13 @@ urlpatterns = [
     # Страница редактирования публикации.
     path(
         'posts/<int:post_id>/edit/',
-        PostEditView.as_view(),
+        views.PostEditView.as_view(),
         name='edit_post'),
 
     # Страница удаления публикации.
     path(
         'posts/<int:post_id>/delete/',
-        PostDeleteView.as_view(),
+        views.PostDeleteView.as_view(),
         name='delete_post'),
 
     # Страница категории.
@@ -49,30 +45,30 @@ urlpatterns = [
     # Страница редактирования профиля пользователя.
     path(
         'profile/edit/',
-        ProfileEditView.as_view(),
+        views.ProfileEditView.as_view(),
         name='edit_profile'),
 
     # Страница профиля пользователя.
     path(
         'profile/<str:username>/',
-        ProfileView.as_view(),
+        views.ProfileView.as_view(),
         name='profile'),
 
     # Страница добавления комментария.
     path(
         'posts/<int:post_id>/comment/',
-        CommentCreateView.as_view(),
+        views.CommentCreateView.as_view(),
         name='add_comment'),
 
     # Страница редактирования комментария.
     path(
         'posts/<int:post_id>/edit_comment/<int:comment_id>/',
-        CommentEditView.as_view(),
+        views.CommentEditView.as_view(),
         name='edit_comment'),
 
     # Страница удаления комментария.
     path(
         'posts/<int:post_id>/delete_comment/<int:comment_id>/',
-        CommentDeleteView.as_view(),
+        views.CommentDeleteView.as_view(),
         name='delete_comment'),
 ]

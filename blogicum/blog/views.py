@@ -3,13 +3,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse, reverse_lazy
+from django.utils.timezone import now
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
 
 from .constants import POSTS_LIMIT_ON_PAGE, COMMENTS_LIMIT_ON_PAGE
 from .forms import CommentForm, PostForm, ProfileEditForm
 from .mixins import (AuthorCheckMixin,
                      PostMixin,
-                     PostVisibilityMixin,
                      CommentMixin)
 from .models import Category, Comment, Post
 from .services import paginate_posts
@@ -23,7 +23,7 @@ class SignUpView(CreateView):
     success_url = reverse_lazy('login')
 
 
-class ProfileView(PostVisibilityMixin, ListView):
+class ProfileView(ListView):
     """Класс отображения профиля."""
 
     template_name = 'blog/profile.html'
@@ -40,9 +40,14 @@ class ProfileView(PostVisibilityMixin, ListView):
     def get_queryset(self):
         """Возвращает посты автора с аннотацией количества комментариев."""
         author = self.get_author()
-        return author.posts.filter(
-            self.get_visible_posts()
-        ).with_comments_count().order_by('-pub_date')
+        queryset = author.posts.with_comments_count()
+        if self.request.user != author:
+            queryset = queryset.filter(
+                is_published=True,
+                pub_date__lte=now(),
+                category__is_published=True
+            )
+        return queryset.order_by_pub_date()
 
     def get_context_data(self, **kwargs):
         """Добавляет автора в контекст."""
@@ -83,27 +88,27 @@ class PostCreateView(PostMixin, CreateView):
 class PostEditView(AuthorCheckMixin, PostMixin, UpdateView):
     """Редактирование существующей публикации (только для автора)."""
 
-    model = Post
     form_class = PostForm
 
     def get_success_url(self):
         """Перенаправление на страницу публикации после редактирования."""
         return reverse(
             'blog:post_detail',
-            kwargs={'post_id': self.object.pk}
+            kwargs={'post_id': self.kwargs['post_id']}
         )
 
 
 class PostDeleteView(AuthorCheckMixin, PostMixin, DeleteView):
     """Удаление существующей публикации (только для автора)."""
 
-    model = Post
-    template_name = 'blog/create.html'
+    pass
 
 
 def index(request):
     """Функция для главной страницы."""
-    posts = Post.objects.published_with_comments().order_by('-pub_date')
+    posts = (Post.objects.filter_published()
+             .with_comments_count()
+             .order_by_pub_date())
     _, page_obj = paginate_posts(posts, request.GET.get('page'))
     return render(request, 'blog/index.html', {'page_obj': page_obj})
 
@@ -115,7 +120,10 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True
     )
-    posts = category.posts.published_with_comments().order_by('-pub_date')
+    posts = (category
+             .posts.filter_published()
+             .with_comments_count()
+             .order_by_pub_date())
     _, page_obj = paginate_posts(posts, request.GET.get('page'))
 
     return render(
@@ -129,16 +137,14 @@ def category_posts(request, category_slug):
 def post_detail(request, post_id):
     """Функция для страницы публикации."""
     post = get_object_or_404(
-        Post.objects.select_related(
-            'author',
-            'category',
-            'location'
-        ).with_comments_count().order_by('-pub_date'),
-        PostVisibilityMixin(request).get_visible_posts(),
+        Post.objects.select_related('author', 'category', 'location')
+            .visible_to_user(request.user)
+            .with_comments_count()
+            .order_by_pub_date(),
         pk=post_id
     )
 
-    comments = post.comments.select_related('author').order_by('created_at')
+    comments = post.comments.select_related('author')
     _, page_obj = paginate_posts(
         comments,
         request.GET.get('page'),
@@ -168,20 +174,10 @@ class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
 class CommentEditView(AuthorCheckMixin, CommentMixin, UpdateView):
     """Редактирование комментария к публикации."""
 
-    model = Comment
     form_class = CommentForm
-    pk_url_kwarg = 'comment_id'
 
 
 class CommentDeleteView(AuthorCheckMixin, CommentMixin, DeleteView):
     """Удаление комментария к публикации."""
 
-    model = Comment
-    pk_url_kwarg = 'comment_id'
-
-    def get_success_url(self):
-        """Перенаправление на страницу публикации после удаления."""
-        return reverse(
-            'blog:post_detail',
-            kwargs={'post_id': self.object.post.pk}
-        )
+    pass

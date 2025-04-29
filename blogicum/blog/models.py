@@ -9,7 +9,18 @@ from .services import truncate_text
 class PostQuerySet(models.QuerySet):
     """Кастомный QuerySet для модели Post."""
 
-    def published(self):
+    def visible_to_user(self, user=None):
+        """Возвращает публикации, доступные для пользователя."""
+        base_filter = models.Q(
+            is_published=True,
+            pub_date__lte=now(),
+            category__is_published=True
+        )
+        if user and user.is_authenticated:
+            return self.filter(base_filter | models.Q(author=user))
+        return self.filter(base_filter)
+
+    def filter_published(self):
         """Возвращает опубликованные посты."""
         return self.filter(
             is_published=True,
@@ -19,13 +30,14 @@ class PostQuerySet(models.QuerySet):
 
     def with_comments_count(self):
         """Добавляет аннотацию с количеством комментариев."""
-        return self.annotate(
-            comment_count=models.Count('comments')
+        return (
+            self.annotate(comment_count=models.Count('comments'))
+            .select_related('author', 'category', 'location')
         )
 
-    def published_with_comments(self):
-        """Возвращает опубликованные посты с количеством комментариев."""
-        return self.published().with_comments_count()
+    def order_by_pub_date(self):
+        """Сортировка постов по дате публикации (от новых к старым)."""
+        return self.order_by("-pub_date")
 
 
 User = get_user_model()
@@ -154,7 +166,6 @@ class Comment(CreatedAtAbstract):
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
-        related_name='comments',
         verbose_name='Публикация'
     )
     author = models.ForeignKey(
@@ -168,6 +179,7 @@ class Comment(CreatedAtAbstract):
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
         default_related_name = 'comments'
+        ordering = ('created_at',)
 
     def __str__(self):
         return f'Комментарий {self.author.username} к посту {self.post.id}'
