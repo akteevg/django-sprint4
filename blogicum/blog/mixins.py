@@ -22,11 +22,10 @@ class PostMixin(LoginRequiredMixin):
 
     def handle_no_permission(self):
         """Перенаправление на страницу публикации, если нет прав."""
-        if not self.request.user.is_authenticated:
-            # Родительский метод (редирект на логин).
-            return super().handle_no_permission()
-        # Для авторизованных, не авторов (редирект на публикацию).
-        return redirect('blog:post_detail', post_id=self.kwargs['post_id'])
+        return redirect(
+            'blog:post_detail',
+            post_id=self.kwargs[self.pk_url_kwarg]
+        )
 
     def get_success_url(self):
         """Перенаправление в профиль после успешного действия."""
@@ -38,11 +37,7 @@ class PostMixin(LoginRequiredMixin):
     def get_context_data(self, **kwargs):
         """Добавляет форму в контекст."""
         context = super().get_context_data(**kwargs)
-        # Создаем форму, передаем текущую публикацию при редактировании.
-        form = self.get_form()
-        if self.object:  # Если публикация существует.
-            form.instance = self.object  # Связываем форму с публикацией.
-        context['form'] = form
+        context['form'] = self.get_form()
         return context
 
 

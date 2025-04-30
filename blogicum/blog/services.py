@@ -10,10 +10,10 @@ def truncate_text(text, length=TRUNCATE_LENGTH):
 
 
 def paginate_posts(
-        posts: QuerySet, page_number: str,
+        posts: QuerySet,
+        page_number: str,
         page_size: int = POSTS_LIMIT_ON_PAGE
-) -> tuple[Paginator, object]:
+):
     """Создает пагинатор для постов и возвращает страницу."""
     paginator = Paginator(posts, page_size)
-    page_obj = paginator.get_page(page_number)
-    return paginator, page_obj
+    return paginator.get_page(page_number)

@@ -5,22 +5,13 @@ from django.utils.timezone import now
 from .constants import CHAR_FIELD_MAX_LENGTH
 from .services import truncate_text
 
+User = get_user_model()
+
 
 class PostQuerySet(models.QuerySet):
     """Кастомный QuerySet для модели Post."""
 
-    def visible_to_user(self, user=None):
-        """Возвращает публикации, доступные для пользователя."""
-        base_filter = models.Q(
-            is_published=True,
-            pub_date__lte=now(),
-            category__is_published=True
-        )
-        if user and user.is_authenticated:
-            return self.filter(base_filter | models.Q(author=user))
-        return self.filter(base_filter)
-
-    def filter_published(self):
+    def filter_posts_by_publication(self):
         """Возвращает опубликованные посты."""
         return self.filter(
             is_published=True,
@@ -29,18 +20,12 @@ class PostQuerySet(models.QuerySet):
         )
 
     def with_comments_count(self):
-        """Добавляет аннотацию с количеством комментариев."""
-        return (
-            self.annotate(comment_count=models.Count('comments'))
-            .select_related('author', 'category', 'location')
-        )
-
-    def order_by_pub_date(self):
-        """Сортировка постов по дате публикации (от новых к старым)."""
-        return self.order_by("-pub_date")
-
-
-User = get_user_model()
+        """Добавляет аннотацию с количеством комментов и сортирует по дате."""
+        return self.annotate(
+            comment_count=models.Count('comments')
+        ).select_related(
+            'author', 'category', 'location'
+        ).order_by("-pub_date")
 
 
 class CreatedAtAbstract(models.Model):
