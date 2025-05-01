@@ -79,7 +79,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         """Авторство присваиваем текущему пользователю."""
         form.instance.author = self.request.user
         return super().form_valid(form)
-    
+
     def get_success_url(self):
         """Перенаправление в профиль после создания."""
         return reverse(
