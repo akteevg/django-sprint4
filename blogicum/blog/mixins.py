@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import redirect
 from django.urls import reverse
 
+from .forms import PostForm
 from .models import Comment, Post
 
 
@@ -37,7 +38,7 @@ class PostMixin(LoginRequiredMixin):
     def get_context_data(self, **kwargs):
         """Добавляет форму в контекст."""
         context = super().get_context_data(**kwargs)
-        context['form'] = self.get_form()
+        context['form'] = PostForm(instance=self.object)
         return context
 
 
