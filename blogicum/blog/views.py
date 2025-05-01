@@ -138,14 +138,12 @@ def category_posts(request, category_slug):
 def post_detail(request, post_id):
     """Функция для страницы публикации."""
     post = get_object_or_404(
-        Post.objects.select_related('author', 'category', 'location')
-            .with_comments_count(),
+        Post.objects.select_related('author', 'category', 'location'),
         pk=post_id)
-    if not (request.user.is_authenticated and post.author == request.user):
+    if not post.author == request.user:
         post = get_object_or_404(
             Post.objects.select_related('author', 'category', 'location')
-                .filter_posts_by_publication()
-                .with_comments_count(),
+                .filter_posts_by_publication(),
             pk=post_id
         )
 
