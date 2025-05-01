@@ -69,15 +69,23 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         return self.request.user
 
 
-class PostCreateView(PostMixin, CreateView):
+class PostCreateView(LoginRequiredMixin, CreateView):
     """Создание новой публикации (только для авторизованных)."""
 
     form_class = PostForm
+    template_name = 'blog/create.html'
 
     def form_valid(self, form):
         """Авторство присваиваем текущему пользователю."""
         form.instance.author = self.request.user
         return super().form_valid(form)
+    
+    def get_success_url(self):
+        """Перенаправление в профиль после создания."""
+        return reverse(
+            'blog:profile',
+            kwargs={'username': self.request.user.username}
+        )
 
 
 class PostEditView(AuthorCheckMixin, PostMixin, UpdateView):

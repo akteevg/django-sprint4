@@ -22,12 +22,10 @@ class PostMixin(LoginRequiredMixin):
 
     def handle_no_permission(self):
         """Перенаправление, если нет прав."""
-        if self.pk_url_kwarg in self.kwargs:
-            return redirect(
-                'blog:post_detail',
-                post_id=self.kwargs[self.pk_url_kwarg]
-            )
-        return redirect('blog:index')
+        return redirect(
+            'blog:post_detail',
+            post_id=self.kwargs[self.pk_url_kwarg]
+        )
 
     def get_success_url(self):
         """Перенаправление в профиль после успешного действия."""
